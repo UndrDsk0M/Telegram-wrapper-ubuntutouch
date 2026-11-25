@@ -56,18 +56,21 @@ type row struct {
 }
 
 type entry struct {
-	ID     int    `json:"id"`
-	Sender string `json:"sender"`
-	Text   string `json:"text"`
-	Time   int    `json:"time"`
-	Mine   bool   `json:"mine"`
+	ID         int    `json:"id"`
+	Sender     string `json:"sender"`
+	Text       string `json:"text"`
+	Time       int    `json:"time"`
+	Mine       bool   `json:"mine"`
+	Attachment string `json:"attachment,omitempty"`
 }
 
 type reply struct {
-	Stage    string  `json:"stage"`
-	Error    string  `json:"error,omitempty"`
-	Chats    []row   `json:"chats"`
-	Messages []entry `json:"messages"`
+	Stage       string    `json:"stage"`
+	Error       string    `json:"error,omitempty"`
+	Chats       []row     `json:"chats"`
+	Messages    []entry   `json:"messages"`
+	Files       []fileRow `json:"files"`
+	Downloading bool      `json:"downloading"`
 }
 
 type app struct {
@@ -81,9 +84,14 @@ type app struct {
 	done     <-chan error
 	chats    map[string]tg.InputPeerClass
 	read     map[string]int
+	files    *downloads
 }
 
 func (a *app) stop() {
+	if a.files != nil {
+		a.files.stop()
+		a.files = nil
+	}
 	if a.cancel != nil {
 		a.cancel()
 		<-a.done
@@ -101,7 +109,7 @@ func (a *app) connect(creds credentials) error {
 		NoUpdates:      true,
 		SessionStorage: &session.FileStorage{Path: filepath.Join(a.dir, "session.json")},
 		Device: telegram.DeviceConfig{
-			DeviceModel: "Ubuntu Touch", SystemVersion: "16.04", AppVersion: "0.1.0",
+			DeviceModel: "Ubuntu Touch", SystemVersion: "16.04", AppVersion: "0.2.0",
 			SystemLangCode: "en", LangCode: "en",
 		},
 	})
@@ -140,8 +148,20 @@ func (a *app) connect(creds credentials) error {
 	}
 	a.stage = "phone"
 	if status.Authorized {
-		a.stage = "chats"
+		return a.openAccount(status.User)
 	}
+	return nil
+}
+
+func (a *app) openAccount(account tg.UserClass) error {
+	user, ok := account.(*tg.User)
+	if !ok || user == nil {
+		a.stage = "connect"
+		return errors.New("Telegram did not return account information. Tap Retry.")
+	}
+	a.files = openDownloads(a.dir, user.ID)
+	a.stage = "chats"
+	a.phone, a.codeHash = "", ""
 	return nil
 }
 
@@ -199,15 +219,16 @@ func (a *app) authenticate(ctx context.Context, value string) error {
 		case *tg.AuthSentCode:
 			a.phone, a.codeHash, a.stage = phone, result.PhoneCodeHash, "code"
 		case *tg.AuthSentCodeSuccess:
-			if _, ok := result.Authorization.(*tg.AuthAuthorization); !ok {
+			signedIn, ok := result.Authorization.(*tg.AuthAuthorization)
+			if !ok {
 				return errors.New("Create your account with Telegram before signing in here")
 			}
-			a.stage = "chats"
+			return a.openAccount(signedIn.User)
 		default:
 			return errors.New("This Telegram sign-in method is unavailable in the client")
 		}
 	case "code":
-		_, err := a.client.Auth().SignIn(ctx, a.phone, strings.TrimSpace(value), a.codeHash)
+		signedIn, err := a.client.Auth().SignIn(ctx, a.phone, strings.TrimSpace(value), a.codeHash)
 		if errors.Is(err, auth.ErrPasswordAuthNeeded) {
 			a.stage = "password"
 			return nil
@@ -215,17 +236,15 @@ func (a *app) authenticate(ctx context.Context, value string) error {
 		if err != nil {
 			return err
 		}
-		a.stage = "chats"
+		return a.openAccount(signedIn.User)
 	case "password":
-		if _, err := a.client.Auth().Password(ctx, value); err != nil {
+		signedIn, err := a.client.Auth().Password(ctx, value)
+		if err != nil {
 			return err
 		}
-		a.stage = "chats"
+		return a.openAccount(signedIn.User)
 	default:
 		return errors.New("Sign-in is unavailable in this screen")
-	}
-	if a.stage == "chats" {
-		a.phone, a.codeHash = "", ""
 	}
 	return nil
 }
@@ -282,7 +301,14 @@ func (a *app) list(ctx context.Context) ([]row, error) {
 			continue
 		}
 		key := fmt.Sprintf("%T-%v", value.Peer, dialog.Peer)
-		result = append(result, row{key, name(dialog.Peer, value.Entities), messageText(value.Last), dialog.UnreadCount})
+		preview := messageText(value.Last)
+		if message, ok := value.Last.(*tg.Message); ok {
+			filename := a.files.remember(key, value.Peer, message, value.Entities)
+			if filename != "" && message.Message == "" {
+				preview = filename
+			}
+		}
+		result = append(result, row{key, name(dialog.Peer, value.Entities), preview, dialog.UnreadCount})
 		peers[key] = value.Peer
 	}
 	if err := iter.Err(); err != nil {
@@ -292,7 +318,7 @@ func (a *app) list(ctx context.Context) ([]row, error) {
 	return result, nil
 }
 
-func (a *app) history(ctx context.Context, p tg.InputPeerClass, before int) ([]entry, error) {
+func (a *app) history(ctx context.Context, p tg.InputPeerClass, key string, before int) ([]entry, error) {
 	iter := messages.NewQueryBuilder(a.client.API()).GetHistory(p).OffsetID(before).BatchSize(pageSize).Iter()
 	result := make([]entry, 0, pageSize)
 	for len(result) < pageSize && iter.Next(ctx) {
@@ -301,6 +327,10 @@ func (a *app) history(ctx context.Context, p tg.InputPeerClass, before int) ([]e
 		item := entry{ID: message.GetID(), Time: message.GetDate(), Text: messageText(message)}
 		if text, ok := message.(*tg.Message); ok {
 			item.Mine = text.Out
+			item.Attachment = a.files.remember(key, p, text, value.Entities)
+			if item.Attachment != "" {
+				item.Text = text.Message
+			}
 			if sender, exists := text.GetFromID(); exists && !text.Out {
 				item.Sender = name(sender, value.Entities)
 			}
@@ -362,6 +392,19 @@ func (a *app) command(req request, result *reply) error {
 	if a.stage != "chats" {
 		return errors.New("Sign in before opening chats")
 	}
+	a.files.settle()
+	switch req.Action {
+	case "downloads", "download", "cancel-download":
+		var err error
+		if req.Action == "download" {
+			err = a.files.start(a.ctx, a.client, req.Value)
+		}
+		if req.Action == "cancel-download" && a.files.active != nil && a.files.active.id == req.Value {
+			a.files.active.cancel()
+		}
+		result.Files, result.Downloading = a.files.rows(req.Chat), a.files.active != nil
+		return err
+	}
 	if req.Action == "list" {
 		var err error
 		result.Chats, err = a.list(ctx)
@@ -387,7 +430,7 @@ func (a *app) command(req request, result *reply) error {
 	switch req.Action {
 	case "history":
 		var err error
-		result.Messages, err = a.history(ctx, p, req.Before)
+		result.Messages, err = a.history(ctx, p, req.Chat, req.Before)
 		if err == nil && req.Read && req.Before == 0 && len(result.Messages) > 0 {
 			a.markRead(ctx, req.Chat, p, result.Messages[len(result.Messages)-1].ID)
 		}

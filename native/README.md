@@ -2,7 +2,11 @@
 
 Sparrow Chat is an unofficial native Telegram client for Ubuntu Touch 16.04. Its interface uses Qt Quick and Ubuntu Components. The bundled Go backend connects directly to Telegram using [gotd](https://github.com/gotd/td).
 
-The first build supports signing in to an existing account, two-step verification, the 50 most recent chats, message history, and sending plain text. It refreshes the current screen while active and shows attachment placeholders. It does not download media or provide background notifications, calls, secret chats, or account registration.
+Sparrow Chat supports signing in to an existing account, two-step verification, the 50 most recent chats, message history, and sending plain text. It refreshes the current screen while active.
+
+## Downloads
+
+The Downloads tab lists supported attachments detected in messages as they load. Open a chat and use **Find files in older messages** to look further back. Tap **Download** to save a photo, audio clip, video, or document. Sparrow Chat downloads one file at a time and streams it to disk. Use **Save to…** and choose File Manager to export a copy. Downloaded files stay in the app’s private storage until exported, and interrupted downloads can be retried.
 
 ## Install
 

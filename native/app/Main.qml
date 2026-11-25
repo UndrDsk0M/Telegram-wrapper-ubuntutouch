@@ -21,6 +21,12 @@ MainView {
     property string activeChat: ""
     property string activeTitle: ""
     property bool moreHistory: true
+    property bool downloadsOpen: false
+    property var downloadFiles: []
+    property bool downloading: false
+    property int scanBefore: 0
+    property bool canScan: false
+    property string saveUrl: ""
     property color ink: "#1b352d"
     property color muted: "#526860"
     property int servicePort: 0
@@ -55,6 +61,12 @@ MainView {
             if (response.error) {
                 status = response.error
                 return
+            }
+            if (stage !== "chats") {
+                downloadsOpen = false
+                downloadFiles = []
+                downloading = false
+                saveUrl = ""
             }
             if (stage === "chats" && previous !== stage)
                 refreshChats()
@@ -99,7 +111,35 @@ MainView {
         }, quiet)
     }
 
+    function refreshDownloads(action, id, quiet) {
+        request(action || "downloads", { chat: activeChat, value: id || "" }, function(response) {
+            var files = response.files || []
+            if (JSON.stringify(files) !== JSON.stringify(downloadFiles))
+                downloadFiles = files
+            downloading = response.downloading
+        }, quiet)
+    }
+
+    function openDownloads() {
+        downloadsOpen = true
+        downloadFiles = []
+        scanBefore = messages.length > 0 ? messages[0].id : 0
+        canScan = activeChat !== "" && messages.length >= 30
+        refreshDownloads()
+    }
+
+    function scanOlderFiles() {
+        request("history", { chat: activeChat, before: scanBefore }, function(response) {
+            var page = response.messages || []
+            if (page.length > 0)
+                scanBefore = page[0].id
+            canScan = page.length === 30
+            refreshDownloads()
+        })
+    }
+
     function openChat(chat) {
+        downloadsOpen = false
         activeChat = chat.key
         activeTitle = chat.title
         moreHistory = true
@@ -158,13 +198,21 @@ MainView {
     }
 
     Timer {
-        interval: activeChat === "" ? 25000 : 12000
+        interval: downloadsOpen ? (downloading ? 1200 : 12000) : (activeChat === "" ? 25000 : 12000)
         running: stage === "chats" && Qt.application.state === Qt.ApplicationActive
         repeat: true
         onTriggered: {
             if (busy || status !== "")
                 return
-            if (activeChat === "")
+            if (downloadsOpen) {
+                if (downloading || activeChat === "") {
+                    refreshDownloads("downloads", "", true)
+                } else {
+                    request("history", { chat: activeChat }, function() {
+                        refreshDownloads("downloads", "", true)
+                    }, true)
+                }
+            } else if (activeChat === "")
                 refreshChats(true)
             else
                 loadHistory(0, false, true)
@@ -187,10 +235,14 @@ MainView {
                 spacing: units.gu(1)
 
                 Button {
-                    visible: stage === "chats" && activeChat !== ""
+                    visible: stage === "chats" && (downloadsOpen || activeChat !== "")
                     text: "Back"
                     enabled: !busy
                     onClicked: {
+                        if (downloadsOpen) {
+                            downloadsOpen = false
+                            return
+                        }
                         activeChat = ""
                         messages = []
                         composer.text = ""
@@ -200,7 +252,7 @@ MainView {
 
                 Text {
                     Layout.fillWidth: true
-                    text: stage === "chats" && activeChat !== "" ? activeTitle : "Sparrow Chat"
+                    text: downloadsOpen ? "Downloads" : stage === "chats" && activeChat !== "" ? activeTitle : "Sparrow Chat"
                     color: "white"
                     elide: Text.ElideRight
                     textFormat: Text.PlainText
@@ -209,14 +261,14 @@ MainView {
                 }
 
                 Button {
-                    visible: stage === "chats" && activeChat === ""
+                    visible: stage === "chats" && !downloadsOpen && activeChat === ""
                     text: "Sign out"
                     enabled: !busy
                     onClicked: PopupUtils.open(logoutDialog)
                 }
 
                 Button {
-                    visible: stage === "chats" && activeChat !== ""
+                    visible: stage === "chats" && !downloadsOpen && activeChat !== ""
                     text: "Refresh"
                     enabled: !busy
                     onClicked: loadHistory(0, false)
@@ -239,6 +291,49 @@ MainView {
                 textFormat: Text.PlainText
                 font.pixelSize: units.gu(1.65)
             }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.leftMargin: units.gu(1)
+            Layout.rightMargin: units.gu(1)
+            Layout.topMargin: units.gu(1)
+            Layout.bottomMargin: units.gu(1)
+            visible: stage === "chats"
+
+            Button {
+                Layout.fillWidth: true
+                text: activeChat === "" ? "Chats" : "Messages"
+                color: !downloadsOpen ? app.accent : UbuntuColors.lightGrey
+                enabled: !busy
+                onClicked: downloadsOpen = false
+            }
+
+            Button {
+                Layout.fillWidth: true
+                text: "Downloads"
+                color: downloadsOpen ? app.accent : UbuntuColors.lightGrey
+                enabled: !busy
+                onClicked: {
+                    if (!downloadsOpen)
+                        openDownloads()
+                }
+            }
+        }
+
+        DownloadsPane {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            visible: stage === "chats" && downloadsOpen
+            files: downloadFiles
+            transferring: downloading
+            busy: app.busy
+            canScan: app.canScan
+            chatTitle: activeChat === "" ? "" : activeTitle
+            onDownload: refreshDownloads("download", id)
+            onCancel: refreshDownloads("cancel-download", id)
+            onScan: scanOlderFiles()
+            onSave: saveUrl = url
         }
 
         Item {
@@ -337,7 +432,7 @@ MainView {
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: stage === "chats" && activeChat === ""
+            visible: stage === "chats" && !downloadsOpen && activeChat === ""
             spacing: 0
 
             RowLayout {
@@ -440,7 +535,7 @@ MainView {
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: stage === "chats" && activeChat !== ""
+            visible: stage === "chats" && !downloadsOpen && activeChat !== ""
             spacing: 0
 
             ListView {
@@ -489,11 +584,19 @@ MainView {
                             }
                             Text {
                                 width: parent.width
+                                visible: text !== ""
                                 text: modelData.text
                                 textFormat: Text.PlainText
                                 wrapMode: Text.Wrap
                                 color: app.ink
                                 font.pixelSize: units.gu(2)
+                            }
+                            Button {
+                                width: parent.width
+                                visible: !!modelData.attachment
+                                text: modelData.attachment || ""
+                                enabled: !busy
+                                onClicked: openDownloads()
                             }
                             Text {
                                 width: parent.width
@@ -528,6 +631,23 @@ MainView {
                     enabled: !busy && composer.text.trim().length > 0
                     onClicked: sendMessage()
                 }
+            }
+        }
+    }
+
+    Loader {
+        anchors.fill: parent
+        z: 10
+        active: saveUrl !== ""
+        source: active ? "SaveFile.qml" : ""
+        onLoaded: {
+            item.fileUrl = saveUrl
+            item.closed.connect(function() { saveUrl = "" })
+        }
+        onStatusChanged: {
+            if (status === Loader.Error) {
+                saveUrl = ""
+                app.status = "File Manager export is unavailable."
             }
         }
     }

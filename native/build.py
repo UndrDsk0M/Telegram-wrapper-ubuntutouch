@@ -36,7 +36,7 @@ def build(project, output, architecture):
         "name": "sparrow-chat.touchwrapper",
         "title": "Sparrow Chat",
         "description": "Lightweight native Telegram messenger",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "architecture": architecture,
         "framework": "ubuntu-sdk-16.04.8",
         "maintainer": "Sparrow Chat <maintainer@example.invalid>",
@@ -45,7 +45,7 @@ def build(project, output, architecture):
             "desktop": "sparrow-chat.desktop",
         }},
     }
-    apparmor = {"policy_groups": ["networking"], "policy_version": 16.04}
+    apparmor = {"policy_groups": ["networking", "content_exchange_source"], "policy_version": 16.04}
     with TemporaryDirectory(prefix="sparrow-click-") as temporary:
         staging = Path(temporary) / "app"
         copytree(project / "app", staging)
@@ -62,7 +62,7 @@ def build(project, output, architecture):
             executable = path.is_dir() or path.name == "sparrow-backend"
             path.chmod(0o755 if executable else 0o644)
         run(["click", "build", str(staging)], cwd=output, check=True)
-        (output / ("sparrow-chat.touchwrapper_0.1.0_" + architecture + ".click")).chmod(0o644)
+        (output / ("sparrow-chat.touchwrapper_0.2.0_" + architecture + ".click")).chmod(0o644)
 
 
 def main():
