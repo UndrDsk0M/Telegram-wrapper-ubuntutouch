@@ -4,7 +4,7 @@ This unofficial wrapper opens [Telegram Web K](https://web.telegram.org/k/) in i
 
 ## Sparrow Chat for Ubuntu Touch 16.04
 
-Sparrow Chat is a lightweight native Telegram client. The preview release has installable `armhf` and `arm64` builds. [Download Sparrow Chat 0.1.0](https://github.com/UndrDsk0M/Telegram-wrapper-ubuntutouch/releases/tag/sparrow-v0.1.0)
+Sparrow Chat is a lightweight native Telegram client. The preview release has a Downloads tab and installable `armhf` and `arm64` builds. [Download Sparrow Chat 0.2.0](https://github.com/UndrDsk0M/Telegram-wrapper-ubuntutouch/releases/tag/sparrow-v0.2.0)
 
 ## Install
 
