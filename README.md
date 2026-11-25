@@ -6,6 +6,10 @@ This unofficial wrapper opens [Telegram Web K](https://web.telegram.org/k/) in i
 
 Sparrow Chat is a lightweight native Telegram client. The preview release has a Downloads tab and installable `armhf` and `arm64` builds. [Download Sparrow Chat 0.2.0](https://github.com/UndrDsk0M/Telegram-wrapper-ubuntutouch/releases/tag/sparrow-v0.2.0)
 
+## Pocket Player and ChatGPT Web for Ubuntu Touch 16.04
+
+Pocket Player 1.1.0 supports 31 tested audio and video file types. ChatGPT Web opens the official ChatGPT website. [Download both apps](https://github.com/UndrDsk0M/Telegram-wrapper-ubuntutouch/releases/tag/touch-apps-v1.1.0)
+
 ## Install
 
 Check the Ubuntu Touch release in **Settings → About** and choose its matching `.click` file. The `all` package works across CPU architectures. Open the downloaded file in File Manager, choose **OpenStore**, and tap **Install**. Launch **Telegram Web** from the app drawer.
