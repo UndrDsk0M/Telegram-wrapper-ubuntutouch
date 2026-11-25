@@ -2,6 +2,10 @@
 
 This unofficial wrapper opens [Telegram Web K](https://web.telegram.org/k/) in its own app using Ubuntu Touch’s Morph web app container. Sign-in takes place on Telegram’s site. Morph keeps the wrapper’s browsing data in its own profile.
 
+## Sparrow Chat for Ubuntu Touch 16.04
+
+Sparrow Chat is a lightweight native Telegram client. The preview release has installable `armhf` and `arm64` builds. [Download Sparrow Chat 0.1.0](https://github.com/UndrDsk0M/Telegram-wrapper-ubuntutouch/releases/tag/sparrow-v0.1.0)
+
 ## Install
 
 Check the Ubuntu Touch release in **Settings → About** and choose its matching `.click` file. The `all` package works across CPU architectures. Open the downloaded file in File Manager, choose **OpenStore**, and tap **Install**. Launch **Telegram Web** from the app drawer.
