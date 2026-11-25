@@ -8,7 +8,7 @@ Sparrow Chat is a lightweight native Telegram client. The preview release has a 
 
 ## Pocket Player and ChatGPT Web for Ubuntu Touch 16.04
 
-Pocket Player 1.2.0 supports 31 tested audio and video file types and streams large files in compatibility mode. ChatGPT Web opens the official ChatGPT website. [Download both apps](https://github.com/UndrDsk0M/Telegram-wrapper-ubuntutouch/releases/tag/touch-apps-v1.2.0)
+Pocket Player 1.2.1 supports 31 tested audio and video file types and streams large files in compatibility mode. ChatGPT Web opens the official ChatGPT website. [Download both apps](https://github.com/UndrDsk0M/Telegram-wrapper-ubuntutouch/releases/tag/touch-apps-v1.2.1)
 
 ## Beacon Holdout for Ubuntu Touch 16.04
 
