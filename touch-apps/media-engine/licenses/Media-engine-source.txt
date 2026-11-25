@@ -1,0 +1,5 @@
+Pocket Player compatibility mode invokes FFmpeg as a separate executable.
+FFmpeg 8.1.2 with libx264 is distributed under GPL version 2 or later.
+x264 source revision: 0480cb0 (Debian upstream snapshot 0.165.3223).
+The matching Pocket Player 1.1.0 source archive includes the exact FFmpeg
+and x264 source tarballs plus the build script and Pocket Player source.

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Pocket Player
+Comment=Play local audio and video
+Exec=qmlscene PocketPlayer.qml
+Icon=pocket-player.png
+Type=Application
+Terminal=false
+Categories=AudioVideo;Player;
+X-Ubuntu-Touch=true

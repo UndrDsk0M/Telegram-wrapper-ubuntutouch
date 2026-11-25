@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=ChatGPT Web
+Comment=Open the official ChatGPT website
+Exec=webapp-container --store-session-cookies --enable-back-forward --webappUrlPatterns=https://chatgpt.com/*,https://auth.openai.com/*,https://auth0.openai.com/*,https://openai.com/*,https://accounts.google.com/*,https://appleid.apple.com/*,https://login.microsoftonline.com/*,https://login.live.com/* https://chatgpt.com/
+Icon=chatgpt-web.png
+Type=Application
+Terminal=false
+Categories=Network;
+X-Ubuntu-Touch=true
