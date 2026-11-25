@@ -8,6 +8,7 @@ from shutil import copy2, copytree
 from subprocess import check_output, run
 from tempfile import TemporaryDirectory
 
+VERSION = "0.3.0"
 ARCHITECTURES = {"armhf": "arm", "arm64": "arm64", "amd64": "amd64"}
 
 
@@ -36,7 +37,7 @@ def build(project, output, architecture):
         "name": "sparrow-chat.touchwrapper",
         "title": "Sparrow Chat",
         "description": "Lightweight native Telegram messenger",
-        "version": "0.2.0",
+        "version": VERSION,
         "architecture": architecture,
         "framework": "ubuntu-sdk-16.04.8",
         "maintainer": "Sparrow Chat <maintainer@example.invalid>",
@@ -62,7 +63,7 @@ def build(project, output, architecture):
             executable = path.is_dir() or path.name == "sparrow-backend"
             path.chmod(0o755 if executable else 0o644)
         run(["click", "build", str(staging)], cwd=output, check=True)
-        (output / ("sparrow-chat.touchwrapper_0.2.0_" + architecture + ".click")).chmod(0o644)
+        (output / f"sparrow-chat.touchwrapper_{VERSION}_{architecture}.click").chmod(0o644)
 
 
 def main():

@@ -27,13 +27,17 @@ MainView {
     property int scanBefore: 0
     property bool canScan: false
     property string saveUrl: ""
+    property string openKind: ""
+    property string previewUrl: ""
+    property var pendingFile: null
+    onActiveChatChanged: pendingFile = null
     property color ink: "#1b352d"
     property color muted: "#526860"
     property int servicePort: 0
     property string serviceToken: ""
     property color accent: "#245e50"
 
-    function request(action, fields, onSuccess, quiet) {
+    function request(action, fields, onSuccess, quiet, onFailure) {
         if (busy)
             return
         var payload = fields || {}
@@ -51,6 +55,8 @@ MainView {
             busy = false
             if (xhr.status !== 200) {
                 status = "The Telegram service could not respond."
+                if (onFailure)
+                    onFailure()
                 return
             }
             var response = JSON.parse(xhr.responseText)
@@ -60,6 +66,8 @@ MainView {
                 signValue.text = ""
             if (response.error) {
                 status = response.error
+                if (onFailure)
+                    onFailure()
                 return
             }
             if (stage !== "chats") {
@@ -67,6 +75,9 @@ MainView {
                 downloadFiles = []
                 downloading = false
                 saveUrl = ""
+                openKind = ""
+                previewUrl = ""
+                pendingFile = null
             }
             if (stage === "chats" && previous !== stage)
                 refreshChats()
@@ -117,7 +128,48 @@ MainView {
             if (JSON.stringify(files) !== JSON.stringify(downloadFiles))
                 downloadFiles = files
             downloading = response.downloading
-        }, quiet)
+            if (pendingFile)
+                checkFile(files)
+        }, quiet, function() { pendingFile = null })
+    }
+
+    function openAttachment(id) {
+        pendingFile = { id: id, started: false }
+        refreshDownloads()
+    }
+
+    function checkFile(files) {
+        var target = pendingFile
+        var file = null
+        for (var index = 0; index < files.length; index++) {
+            var item = files[index]
+            if (item.id === target.id) {
+                file = item
+                break
+            }
+        }
+        if (!file) {
+            pendingFile = null
+            status = "This attachment is unavailable. Reopen the chat and try again."
+            return
+        }
+        if (file.state === "saved") {
+            pendingFile = null
+            if (file.kind === "Photo" || file.kind === "Image") {
+                previewUrl = file.url
+            } else {
+                openKind = file.kind
+                saveUrl = file.url
+            }
+        } else if (file.state === "downloading") {
+            target.started = true
+        } else if (target.started) {
+            pendingFile = null
+            status = file.error || "The download stopped. Tap the file to retry."
+        } else {
+            target.started = true
+            refreshDownloads("download", file.id)
+        }
     }
 
     function openDownloads() {
@@ -198,11 +250,21 @@ MainView {
     }
 
     Timer {
+        interval: 1200
+        running: pendingFile !== null && Qt.application.state === Qt.ApplicationActive
+        repeat: true
+        onTriggered: {
+            if (!busy)
+                refreshDownloads("downloads", "", true)
+        }
+    }
+
+    Timer {
         interval: downloadsOpen ? (downloading ? 1200 : 12000) : (activeChat === "" ? 25000 : 12000)
         running: stage === "chats" && Qt.application.state === Qt.ApplicationActive
         repeat: true
         onTriggered: {
-            if (busy || status !== "")
+            if (busy || pendingFile || status !== "")
                 return
             if (downloadsOpen) {
                 if (downloading || activeChat === "") {
@@ -279,13 +341,13 @@ MainView {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: visible ? notice.implicitHeight + units.gu(2) : 0
-            visible: status !== "" || (busy && showWorking)
+            visible: status !== "" || pendingFile !== null || (busy && showWorking)
             color: status === "" ? "#dcece6" : "#fae8dd"
             Text {
                 id: notice
                 anchors.centerIn: parent
                 width: parent.width - units.gu(4)
-                text: status !== "" ? status : "Working…"
+                text: status !== "" ? status : pendingFile ? "Downloading attachment…" : "Working…"
                 color: app.ink
                 wrapMode: Text.Wrap
                 textFormat: Text.PlainText
@@ -333,7 +395,11 @@ MainView {
             onDownload: refreshDownloads("download", id)
             onCancel: refreshDownloads("cancel-download", id)
             onScan: scanOlderFiles()
-            onSave: saveUrl = url
+            onOpenFile: openAttachment(id)
+            onSave: {
+                openKind = ""
+                saveUrl = url
+            }
         }
 
         Item {
@@ -593,10 +659,10 @@ MainView {
                             }
                             Button {
                                 width: parent.width
-                                visible: !!modelData.attachment
+                                visible: !!modelData.attachmentId
                                 text: modelData.attachment || ""
                                 enabled: !busy
-                                onClicked: openDownloads()
+                                onClicked: openAttachment(modelData.attachmentId)
                             }
                             Text {
                                 width: parent.width
@@ -635,6 +701,55 @@ MainView {
         }
     }
 
+    Rectangle {
+        anchors.fill: parent
+        z: 9
+        visible: previewUrl !== ""
+        color: "#f3f6f2"
+
+        MouseArea { anchors.fill: parent }
+
+        Row {
+            id: previewBar
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.margins: units.gu(1)
+            spacing: units.gu(1)
+
+            Button {
+                text: "Back"
+                onClicked: previewUrl = ""
+            }
+            Button {
+                text: "Save to…"
+                onClicked: {
+                    openKind = ""
+                    saveUrl = previewUrl
+                }
+            }
+        }
+
+        Image {
+            id: previewImage
+            anchors.top: previewBar.bottom
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.margins: units.gu(1)
+            source: previewUrl
+            sourceSize.width: width * 2
+            sourceSize.height: height * 2
+            asynchronous: true
+            fillMode: Image.PreserveAspectFit
+        }
+
+        Label {
+            anchors.centerIn: previewImage
+            visible: previewImage.status === Image.Error
+            text: "This image could not be previewed."
+        }
+    }
+
     Loader {
         anchors.fill: parent
         z: 10
@@ -642,6 +757,7 @@ MainView {
         source: active ? "SaveFile.qml" : ""
         onLoaded: {
             item.fileUrl = saveUrl
+            item.openKind = openKind
             item.closed.connect(function() { saveUrl = "" })
         }
         onStatusChanged: {

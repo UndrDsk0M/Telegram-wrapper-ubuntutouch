@@ -230,10 +230,10 @@ func findAttachment(chat string, input tg.InputPeerClass, message *tg.Message, e
 	return result, true
 }
 
-func (d *downloads) remember(chat string, p tg.InputPeerClass, message *tg.Message, entities peer.Entities) string {
+func (d *downloads) remember(chat string, p tg.InputPeerClass, message *tg.Message, entities peer.Entities) (string, string) {
 	item, ok := findAttachment(chat, p, message, entities)
 	if !ok {
-		return ""
+		return "", ""
 	}
 	if _, known := d.available[item.ID]; !known && len(d.available) >= 500 {
 		var oldest attachment
@@ -249,7 +249,7 @@ func (d *downloads) remember(chat string, p tg.InputPeerClass, message *tg.Messa
 		delete(d.failed, oldest.ID)
 	}
 	d.available[item.ID] = item
-	return item.Name
+	return item.Name, item.ID
 }
 
 func (d *downloads) filePath(record fileRecord) string {

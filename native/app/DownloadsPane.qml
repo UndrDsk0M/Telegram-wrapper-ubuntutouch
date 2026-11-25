@@ -9,6 +9,7 @@ ColumnLayout {
     property bool busy: false
     property bool canScan: false
     property string chatTitle: ""
+    signal openFile(string id)
     signal download(string id)
     signal cancel(string id)
     signal scan()
@@ -75,6 +76,12 @@ ColumnLayout {
                         color: "#1b352d"
                         font.bold: true
                         font.pixelSize: units.gu(1.9)
+
+                        MouseArea {
+                            anchors.fill: parent
+                            enabled: !pane.busy
+                            onClicked: pane.openFile(modelData.id)
+                        }
                     }
                     Text {
                         Layout.fillWidth: true

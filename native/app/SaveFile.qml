@@ -6,6 +6,7 @@ Rectangle {
     id: sheet
     color: "#f3f6f2"
     property string fileUrl: ""
+    property string openKind: ""
     property var transfer: null
     signal closed()
 
@@ -30,13 +31,30 @@ Rectangle {
         onClicked: sheet.closed()
     }
 
+    Label {
+        id: openLabel
+        anchors.left: closeButton.right
+        anchors.leftMargin: units.gu(1)
+        anchors.verticalCenter: closeButton.verticalCenter
+        visible: sheet.openKind !== ""
+        text: "Open with…"
+    }
+
     ContentPeerPicker {
         anchors.top: closeButton.bottom
         anchors.topMargin: units.gu(1)
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        contentType: ContentType.All
+        contentType: {
+            switch (sheet.openKind) {
+            case "Video": return ContentType.Videos
+            case "Audio":
+            case "Voice message": return ContentType.Music
+            case "File": return ContentType.Documents
+            default: return ContentType.All
+            }
+        }
         handler: ContentHandler.Destination
         onPeerSelected: {
             sheet.transfer = peer.request()

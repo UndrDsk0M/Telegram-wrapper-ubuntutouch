@@ -6,7 +6,7 @@ Sparrow Chat supports signing in to an existing account, two-step verification, 
 
 ## Downloads
 
-The Downloads tab lists supported attachments detected in messages as they load. Open a chat and use **Find files in older messages** to look further back. Tap **Download** to save a photo, audio clip, video, or document. Sparrow Chat downloads one file at a time and streams it to disk. Use **Save to…** and choose File Manager to export a copy. Downloaded files stay in the app’s private storage until exported, and interrupted downloads can be retried.
+The Downloads tab lists supported attachments detected in messages as they load. Open a chat and use **Find files in older messages** to look further back. Tap an attachment in a chat or its filename in Downloads to download it and open it. Images open in Sparrow Chat. For audio, video, and documents, choose an installed app from the system picker. Sparrow Chat downloads one file at a time and streams it to disk. Use **Save to…** and choose File Manager to export a copy. Downloaded files stay in the app’s private storage until exported, and interrupted downloads can be retried.
 
 ## Install
 

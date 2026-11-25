@@ -34,13 +34,13 @@ import (
 const pageSize = 30
 
 type credentials struct {
-	ID   int    `json:"id"`
+	ID           int    `json:"id"`
 	Hash string `json:"hash"`
 }
 
 type request struct {
 	Action string `json:"action"`
-	ID     string `json:"id"`
+	ID           string `json:"id"`
 	Hash   string `json:"hash"`
 	Value  string `json:"value"`
 	Chat   string `json:"chat"`
@@ -51,17 +51,18 @@ type request struct {
 type row struct {
 	Key    string `json:"key"`
 	Title  string `json:"title"`
-	Text   string `json:"text"`
+	Text         string `json:"text"`
 	Unread int    `json:"unread"`
 }
 
 type entry struct {
-	ID         int    `json:"id"`
-	Sender     string `json:"sender"`
-	Text       string `json:"text"`
-	Time       int    `json:"time"`
-	Mine       bool   `json:"mine"`
-	Attachment string `json:"attachment,omitempty"`
+	ID           int    `json:"id"`
+	Sender       string `json:"sender"`
+	Text         string `json:"text"`
+	Time         int    `json:"time"`
+	Mine         bool   `json:"mine"`
+	Attachment   string `json:"attachment,omitempty"`
+	AttachmentID string `json:"attachmentId,omitempty"`
 }
 
 type reply struct {
@@ -303,7 +304,7 @@ func (a *app) list(ctx context.Context) ([]row, error) {
 		key := fmt.Sprintf("%T-%v", value.Peer, dialog.Peer)
 		preview := messageText(value.Last)
 		if message, ok := value.Last.(*tg.Message); ok {
-			filename := a.files.remember(key, value.Peer, message, value.Entities)
+			filename, _ := a.files.remember(key, value.Peer, message, value.Entities)
 			if filename != "" && message.Message == "" {
 				preview = filename
 			}
@@ -327,7 +328,7 @@ func (a *app) history(ctx context.Context, p tg.InputPeerClass, key string, befo
 		item := entry{ID: message.GetID(), Time: message.GetDate(), Text: messageText(message)}
 		if text, ok := message.(*tg.Message); ok {
 			item.Mine = text.Out
-			item.Attachment = a.files.remember(key, p, text, value.Entities)
+			item.Attachment, item.AttachmentID = a.files.remember(key, p, text, value.Entities)
 			if item.Attachment != "" {
 				item.Text = text.Message
 			}
