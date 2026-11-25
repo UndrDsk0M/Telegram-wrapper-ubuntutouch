@@ -38,7 +38,7 @@ export PKG_CONFIG_PATH="$work/prefix/lib/pkgconfig"
     --disable-doc --disable-debug --disable-ffprobe --disable-ffplay \
     --disable-avdevice --disable-network --disable-autodetect --disable-asm \
     --disable-everything --enable-ffmpeg --enable-gpl --enable-libx264 --enable-small \
-    --enable-protocol=file \
+    --enable-protocol=file,pipe \
     --enable-demuxer=aac,ac3,aiff,amr,ape,asf,au,avi,caf,dts,eac3,flac,flv,matroska,m4v,mov,mp3,mpegps,mpegts,mpegvideo,ogg,rm,tta,wav,wv \
     --enable-decoder='aac,aac_latm,ac3,eac3,alac,amrnb,amrwb,ape,dca,flac,mp1,mp2,mp3,opus,vorbis,tta,wavpack,wmav1,wmav2,wmapro,wmalossless,wmavoice,pcm*,adpcm*,h264,hevc,av1,vp8,vp9,mpeg1video,mpeg2video,mpeg4,h263,h263i,flv,h263p,msmpeg4v1,msmpeg4v2,msmpeg4v3,wmv1,wmv2,wmv3,vc1,rv10,rv20,rv30,rv40,png,mjpeg,theora,cinepak,dvvideo' \
     --enable-parsers --enable-bsfs --enable-muxer=mp4 --enable-encoder=libx264,aac \

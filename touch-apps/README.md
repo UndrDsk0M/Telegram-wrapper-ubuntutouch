@@ -1,12 +1,14 @@
 # Apps for Ubuntu Touch 16.04
 
-Both apps target the `ubuntu-sdk-16.04.8` framework. ChatGPT Web has architecture `all`. Pocket Player 1.1.0 comes in `armhf` and `arm64` builds. Run `dpkg --print-architecture` on the tablet to pick the matching package.
+Both apps target the `ubuntu-sdk-16.04.8` framework. ChatGPT Web has architecture `all`. Pocket Player 1.2.0 comes in `armhf` and `arm64` builds. Run `dpkg --print-architecture` on the tablet to pick the matching package.
 
 ## Pocket Player
 
 A lightweight player for local audio and video. Open **Pocket Player**, tap **Open file**, and choose an audio or video file through Content Hub. You can also send a media file to Pocket Player from File Manager.
 
-Pocket Player tries the Ubuntu Touch media engine first. If a codec fails, Pocket Player prepares a temporary MP4 with H.264 video and/or AAC audio using its bundled FFmpeg engine. You can also tap **Play in compatibility mode** to start that conversion. Compatibility mode scales video to fit within 854 × 480 and plays the converted copy when it is ready. Long files can take time and require free space. The selected file is preserved.
+Pocket Player tries the Ubuntu Touch media engine first. If a codec fails, compatibility mode uses the bundled FFmpeg engine to convert the media to H.264 video and/or AAC audio, scaling video to fit within 854 × 480. You can also start it with **Play in compatibility mode**.
+
+Compatibility mode streams files of 64 MiB and larger to the player as they convert. This starts playback without preparing a full file on disk. The streamed version plays sequentially. If the system player rejects the stream, tap **Prepare a full copy** to use the disk-based fallback. File Manager may still need time to transfer large imports through Content Hub.
 
 Compatibility samples cover 31 extensions across audio and video, including MP3, WAV, FLAC, AAC, M4A, WMA, OGG, MP4, MKV, AVI, MOV, WebM, WMV, and MPEG. See [the format list](media-engine/README.md) for details.
 

@@ -25,6 +25,8 @@ MainView {
     property bool attempted: false
     property bool converting: false
     property bool compatibilityCopy: false
+    property bool streamingCopy: false
+    property bool streamFailed: false
     readonly property color accent: "#ff996b"
     readonly property color foreground: "#f3efe9"
     readonly property color secondary: "#a6b2c0"
@@ -53,7 +55,8 @@ MainView {
         converting = false
         if (result.state === "ready") {
             compatibilityCopy = true
-            message = ""
+            streamingCopy = !!result.streaming
+            message = streamingCopy ? "Starting playback…" : ""
             playback.source = result.url
             playback.play()
         } else if (result.state === "failed") {
@@ -61,18 +64,20 @@ MainView {
         }
     }
 
-    function startCompatibility() {
+    function startCompatibility(prepareCopy) {
         if (converting || originalFile.toString() === "" || !servicePort)
             return
         attempted = true
         converting = true
         compatibilityCopy = false
+        streamingCopy = false
+        streamFailed = false
         expanded = false
-        message = "Preparing a compatible copy. Large files may take a while."
+        message = prepareCopy ? "Preparing a full copy. This may take a while." : "Preparing playback…"
         playback.stop()
         playback.source = ""
-        var selection = selectedFile
-        requestConversion("start", originalFile.toString(), function(result) {
+        var selection = ++selectedFile
+        requestConversion(prepareCopy ? "prepare-copy" : "start", originalFile.toString(), function(result) {
             conversionResult(result, selection)
         })
     }
@@ -80,6 +85,7 @@ MainView {
     function cancelCompatibility() {
         if (!converting)
             return
+        selectedFile++
         converting = false
         message = "Conversion canceled."
         requestConversion("cancel", "", function() {})
@@ -160,6 +166,8 @@ MainView {
         originalFile = url
         attempted = false
         compatibilityCopy = false
+        streamingCopy = false
+        streamFailed = false
         fileName = nameFor(url)
         message = ""
         playback.source = url
@@ -213,6 +221,10 @@ MainView {
 
     MediaPlayer {
         id: playback
+        onPositionChanged: {
+            if (app.streamingCopy && position > 0 && app.message === "Starting playback…")
+                app.message = ""
+        }
         onError: {
             if (error === MediaPlayer.NoError)
                 return
@@ -225,7 +237,14 @@ MainView {
                 return
             }
             app.expanded = false
-            app.message = "This file could not be played. " + errorString
+            if (app.streamingCopy) {
+                app.streamingCopy = false
+                app.compatibilityCopy = false
+                app.streamFailed = true
+                app.message = "The media engine could not play the stream. You can prepare a full copy."
+            } else {
+                app.message = "This file could not be played. " + errorString
+            }
         }
     }
 
@@ -451,12 +470,12 @@ MainView {
                 Layout.fillWidth: true
                 visible: app.servicePort > 0 && app.fileName !== ""
                 enabled: app.converting || !app.compatibilityCopy
-                text: app.converting ? "Cancel conversion" : "Play in compatibility mode"
+                text: app.converting ? "Cancel conversion" : app.streamFailed ? "Prepare a full copy" : "Play in compatibility mode"
                 onClicked: {
                     if (app.converting)
                         app.cancelCompatibility()
                     else
-                        app.startCompatibility()
+                        app.startCompatibility(app.streamFailed)
                 }
             }
         }

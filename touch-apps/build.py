@@ -13,7 +13,7 @@ APPS = {
     "chatgpt-web": ("ChatGPT Web", "Launcher for the official ChatGPT website", ("networking", "webview")),
 }
 VERSION = "1.0.0"
-PLAYER_VERSION = "1.1.0"
+PLAYER_VERSION = "1.2.0"
 
 
 def build(source, output, app, architecture="all", codecs=None):
