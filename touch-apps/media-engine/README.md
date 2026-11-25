@@ -1,4 +1,4 @@
-# Pocket Player 1.2.0 media compatibility
+# Pocket Player 1.2.1 media compatibility
 
 The compatibility engine processes one selected local file at a time. Files smaller than 64 MiB are prepared as a seekable temporary MP4. Larger files are converted to a fragmented MP4 stream while they play. The app binds the playback service to localhost and uses a randomly generated URL for each stream. The stream plays sequentially. The engine converts the first video track (excluding cover art) and the first audio track, scaling video to fit within 854 × 480. Original media files are preserved.
 

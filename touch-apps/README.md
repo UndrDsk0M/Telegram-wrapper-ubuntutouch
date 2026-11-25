@@ -1,12 +1,14 @@
 # Apps for Ubuntu Touch 16.04
 
-Both apps target the `ubuntu-sdk-16.04.8` framework. ChatGPT Web has architecture `all`. Pocket Player 1.2.0 comes in `armhf` and `arm64` builds. Run `dpkg --print-architecture` on the tablet to pick the matching package.
+Both apps target the `ubuntu-sdk-16.04.8` framework. ChatGPT Web has architecture `all`. Pocket Player 1.2.1 comes in `armhf` and `arm64` builds. Run `dpkg --print-architecture` on the tablet to pick the matching package.
 
 ## Pocket Player
 
 A lightweight player for local audio and video. Open **Pocket Player**, tap **Open file**, and choose an audio or video file through Content Hub. You can also send a media file to Pocket Player from File Manager.
 
 Pocket Player tries the Ubuntu Touch media engine first. If a codec fails, compatibility mode uses the bundled FFmpeg engine to convert the media to H.264 video and/or AAC audio, scaling video to fit within 854 × 480. You can also start it with **Play in compatibility mode**.
+
+Pocket Player can receive an MKV from File Manager even if it is classified as a generic file. When native MKV playback starts with audio but no video, Pocket Player retries with the compatibility engine.
 
 Compatibility mode streams files of 64 MiB and larger to the player as they convert. This starts playback without preparing a full file on disk. The streamed version plays sequentially. If the system player rejects the stream, tap **Prepare a full copy** to use the disk-based fallback. File Manager may still need time to transfer large imports through Content Hub.
 

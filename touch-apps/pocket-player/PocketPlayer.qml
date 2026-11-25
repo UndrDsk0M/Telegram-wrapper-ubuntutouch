@@ -27,6 +27,8 @@ MainView {
     property bool compatibilityCopy: false
     property bool streamingCopy: false
     property bool streamFailed: false
+    property bool nativeVideoSeen: false
+    readonly property bool matroskaMovie: /\.mkv$/i.test(fileName)
     readonly property color accent: "#ff996b"
     readonly property color foreground: "#f3efe9"
     readonly property color secondary: "#a6b2c0"
@@ -82,6 +84,21 @@ MainView {
         })
     }
 
+    function checkMatroskaVideo() {
+        if (!servicePort || attempted || !matroskaMovie || nativeVideoSeen || playback.hasVideo ||
+                playback.source.toString() !== originalFile.toString())
+            return
+        if (playback.status !== MediaPlayer.EndOfMedia &&
+                (!playback.hasAudio || playback.position < 1000))
+            return
+
+        var selection = selectedFile
+        Qt.callLater(function() {
+            if (selection === selectedFile && !attempted && !nativeVideoSeen && !playback.hasVideo)
+                startCompatibility(false)
+        })
+    }
+
     function cancelCompatibility() {
         if (!converting)
             return
@@ -110,6 +127,7 @@ MainView {
                 var descriptor = JSON.parse(config.responseText)
                 servicePort = descriptor.port
                 serviceToken = descriptor.token
+                checkMatroskaVideo()
             } else {
                 message = "Compatibility mode is unavailable."
             }
@@ -165,6 +183,7 @@ MainView {
         currentTransfer = transfer
         originalFile = url
         attempted = false
+        nativeVideoSeen = false
         compatibilityCopy = false
         streamingCopy = false
         streamFailed = false
@@ -221,9 +240,15 @@ MainView {
 
     MediaPlayer {
         id: playback
+        onHasVideoChanged: {
+            if (hasVideo && source.toString() === app.originalFile.toString())
+                app.nativeVideoSeen = true
+        }
+        onStatusChanged: app.checkMatroskaVideo()
         onPositionChanged: {
             if (app.streamingCopy && position > 0 && app.message === "Starting playback…")
                 app.message = ""
+            app.checkMatroskaVideo()
         }
         onError: {
             if (error === MediaPlayer.NoError)
@@ -327,7 +352,7 @@ MainView {
 
                         Text {
                             anchors.centerIn: parent
-                            text: app.fileName === "" ? "▶" : "♫"
+                            text: app.fileName === "" || (app.matroskaMovie && !app.compatibilityCopy) ? "▶" : "♫"
                             font.pixelSize: units.gu(3)
                             color: app.accent
                         }
