@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Telegram Web
+Comment=Open Telegram Web in its own window
+Exec=webapp-container --store-session-cookies --webappUrlPatterns=https://web.telegram.org/* https://web.telegram.org/k/
+Icon=telegram-web.png
+Terminal=false
+Type=Application
+Categories=Network;InstantMessaging;
+X-Lomiri-Touch=true
