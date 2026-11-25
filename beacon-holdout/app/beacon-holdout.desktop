@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Beacon Holdout
+Comment=Defend a bunker from five waves of zombies
+Exec=qmlscene BeaconHoldout.qml
+Icon=icon.png
+Type=Application
+Terminal=false
+Categories=Game;ActionGame;
+X-Ubuntu-Touch=true
+X-Ubuntu-Supported-Orientations=landscape
